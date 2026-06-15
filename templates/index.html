@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Тренажёр радиообмена ✈️</title>
+<style>
+  :root {
+    --bg:       #0b1f2e;
+    --panel:    #112233;
+    --panel2:   #0f2035;
+    --border:   #1e3a50;
+    --teal:     #00c4b4;
+    --teal-dk:  #00897b;
+    --amber:    #ffb300;
+    --red:      #ef5350;
+    --green:    #26c281;
+    --text:     #d8eaf5;
+    --muted:    #7ca3bf;
+    --radius:   14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 15px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 48px;
+  }
+  .wrap { width: 100%; max-width: 760px; }
+
+  /* HEADER */
+  header {
+    text-align: center;
+    padding: 16px 0 28px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 28px;
+  }
+  header h1 { font-size: 1.7rem; font-weight: 800; color: var(--teal); letter-spacing: .4px; }
+  header p  { color: var(--muted); font-size: .9rem; margin-top: 4px; }
+
+  /* CARDS */
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    margin-bottom: 18px;
+  }
+  .card-label {
+    font-size: .72rem; font-weight: 700; letter-spacing: 1.2px;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+  }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 13px 28px; border-radius: 999px; border: none; cursor: pointer;
+    font-size: 1rem; font-weight: 700; transition: transform .12s, box-shadow .12s, filter .12s;
+  }
+  .btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; filter: none; }
+  .btn-primary { background: linear-gradient(100deg,var(--teal-dk),var(--teal)); color:#000; box-shadow:0 6px 18px rgba(0,196,180,.3); }
+  .btn-orange  { background: linear-gradient(100deg,#e65100,#fb8c00); color:#fff; box-shadow:0 6px 18px rgba(230,81,0,.3); }
+  .btn-ghost   { background: transparent; border: 2px solid var(--border); color: var(--muted); }
+  .btn-full    { width: 100%; }
+  .btn-lg      { padding: 16px 36px; font-size: 1.1rem; }
+
+  /* CONTROLLER BOX */
+  #controller-box {
+    background: #051520;
+    border-left: 5px solid var(--amber);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 14px;
+    display: none;
+  }
+  #controller-box .label { color: var(--amber); font-size: .75rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+  #controller-text { font-size: 1.2rem; font-weight: 600; color: #fff8e1; line-height: 1.5; }
+  #data-text { margin-top: 10px; color: var(--muted); font-size: .88rem; }
+
+  /* COUNTDOWN */
+  #countdown-box {
+    background: linear-gradient(100deg,var(--teal-dk),var(--teal));
+    color: #001a17; border-radius: 12px; padding: 14px 20px;
+    text-align: center; font-weight: 700; font-size: 1rem;
+    margin-bottom: 14px; display: none;
+  }
+
+  /* RECORDER */
+  #recorder-section { display: none; margin-bottom: 14px; }
+  #rec-btn {
+    width: 100%; border-radius: 12px; padding: 18px;
+    font-size: 1rem; font-weight: 700; border: 2px solid var(--border);
+    background: var(--panel2); color: var(--text); cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    transition: all .15s;
+  }
+  #rec-btn.recording { background: #2a0000; border-color: var(--red); color: var(--red); animation: pulse 1s infinite; }
+  #rec-btn.done      { background: #001a12; border-color: var(--green); color: var(--green); }
+  @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(239,83,80,.3)} 50%{box-shadow:0 0 0 8px rgba(239,83,80,0)} }
+  #rec-timer { font-size: .85rem; font-weight: 400; color: var(--muted); margin-top: 6px; text-align: center; }
+  #audio-preview { display:none; width:100%; margin-top:10px; border-radius:8px; }
+
+  /* RESULTS */
+  #result-card { display: none; }
+  .score-header {
+    display: flex; align-items: center; gap: 14px; margin-bottom: 18px;
+    padding-bottom: 14px; border-bottom: 1px solid var(--border);
+  }
+  .score-circle {
+    width: 72px; height: 72px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; font-weight: 900;
+  }
+  .score-circle.good   { background: rgba(38,194,129,.15); color: var(--green); border: 2px solid var(--green); }
+  .score-circle.warn   { background: rgba(255,179,0,.12); color: var(--amber); border: 2px solid var(--amber); }
+  .score-circle.bad    { background: rgba(239,83,80,.12); color: var(--red);   border: 2px solid var(--red); }
+  .score-label { font-size: 1.1rem; font-weight: 700; }
+  .score-grade { font-size: .9rem; color: var(--muted); margin-top: 2px; }
+
+  .transcript-box {
+    background: var(--panel2); border-radius: 10px; padding: 14px 16px; margin-bottom: 14px;
+    font-size: .95rem; line-height: 1.6;
+  }
+  .transcript-box .t-label { font-size:.72rem; color:var(--muted); font-weight:700; letter-spacing:1px; text-transform:uppercase; margin-bottom:6px; }
+  .transcript-box .t-text  { color: #fff; }
+  .transcript-box .t-model { color: var(--teal); margin-top: 10px; }
+  .tip-box { background:#0d2a1e; border:1px solid #1a4a30; border-radius:10px; padding:12px 16px; margin-bottom:14px; font-size:.88rem; color:#a8d5b5; }
+
+  .hints { margin-bottom: 14px; }
+  .hint  { display:flex; gap:10px; padding:9px 14px; border-radius:9px; margin-bottom:7px; font-size:.88rem; align-items:flex-start; }
+  .hint.critical{ background:rgba(239,83,80,.12); border:1px solid rgba(239,83,80,.3); color:#ff8a80; }
+  .hint.err     { background:rgba(239,83,80,.08); border:1px solid rgba(239,83,80,.2); color:#ff8a80; }
+  .hint.ok      { background:rgba(38,194,129,.08); border:1px solid rgba(38,194,129,.2); color:#69f0ae; }
+  .hint.warn    { background:rgba(255,179,0,.08); border:1px solid rgba(255,179,0,.2); color:#ffe57f; }
+  .hint.info    { background:rgba(0,196,180,.06); border:1px solid rgba(0,196,180,.2); color:#80cbc4; }
+  .hint-icon    { flex-shrink:0; width:18px; text-align:center; }
+
+  .metrics-table { width:100%; border-collapse:collapse; font-size:.87rem; }
+  .metrics-table th { text-align:left; color:var(--muted); font-weight:600; padding:6px 8px; border-bottom:1px solid var(--border); }
+  .metrics-table td { padding:7px 8px; border-bottom:1px solid #0d2035; }
+  .metrics-table tr:last-child td { border-bottom:none; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:99px; font-size:.78rem; font-weight:700; }
+  .badge.ok   { background:rgba(38,194,129,.15); color:var(--green); }
+  .badge.warn { background:rgba(255,179,0,.15); color:var(--amber); }
+  .badge.err  { background:rgba(239,83,80,.15); color:var(--red); }
+  .badge.info { background:rgba(0,196,180,.12); color:var(--teal); }
+
+  #chart-img { width:100%; border-radius:10px; margin-top:14px; display:none; }
+
+  /* FINAL */
+  #final-card { display:none; }
+  .verdict-banner {
+    text-align:center; padding:24px; border-radius:14px; margin-bottom:20px; font-weight:900; font-size:1.6rem;
+  }
+  .verdict-banner.pass { background:rgba(38,194,129,.12); border:2px solid var(--green); color:var(--green); }
+  .verdict-banner.fail { background:rgba(239,83,80,.1); border:2px solid var(--red); color:var(--red); }
+  .final-item { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border); font-size:.9rem; }
+  .final-item:last-child { border-bottom:none; }
+
+  /* PROGRESS */
+  #progress-bar-wrap { height:4px; background:var(--border); border-radius:2px; margin-bottom:22px; display:none; }
+  #progress-bar { height:4px; background:linear-gradient(90deg,var(--teal-dk),var(--teal)); border-radius:2px; transition:width .4s; }
+
+  /* STEP labels */
+  #step-label { font-size:.8rem; color:var(--muted); margin-bottom:10px; text-align:right; display:none; }
+
+  .hidden { display:none !important; }
+  .text-center { text-align:center; }
+  .mt16 { margin-top:16px; }
+  .mt10 { margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>✈️ Тренажёр радиообмена</h1>
+    <p>Автоматическая оценка по требованиям ФАП-414 · Работает полностью локально</p>
+  </header>
+
+  <!-- START SCREEN -->
+  <div id="start-screen">
+    <div class="card text-center">
+      <div style="font-size:3rem;margin-bottom:12px">🎙️</div>
+      <h2 style="margin-bottom:8px;color:var(--teal)">Готовы к тренировке?</h2>
+      <p style="color:var(--muted);margin-bottom:22px;line-height:1.6">
+        Вам предложат <strong style="color:var(--text)">2 случайных сценария</strong> из банка ФАП-414.<br>
+        Слушайте команду диспетчера и отвечайте голосом.
+      </p>
+      <button class="btn btn-primary btn-lg" onclick="startQuiz()">▶ Начать тест</button>
+    </div>
+    <div class="card" style="font-size:.85rem;color:var(--muted)">
+      <div class="card-label">Как пользоваться</div>
+      <ol style="padding-left:18px;line-height:2">
+        <li>Нажмите <strong style="color:var(--text)">«Начать тест»</strong></li>
+        <li>Прочтите ситуацию и нажмите <strong style="color:var(--text)">«Готов слушать»</strong></li>
+        <li>Услышите команду диспетчера — запись начнётся автоматически</li>
+        <li>Произнесите ответ, нажмите <strong style="color:var(--text)">«Стоп»</strong> и <strong style="color:var(--text)">«Оценить»</strong></li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- QUIZ SCREEN -->
+  <div id="quiz-screen" class="hidden">
+    <div id="step-label"></div>
+    <div id="progress-bar-wrap"><div id="progress-bar"></div></div>
+
+    <!-- Ситуация -->
+    <div class="card" id="situation-card">
+      <div class="card-label">🗺 Ситуация</div>
+      <div id="situation-text" style="line-height:1.7"></div>
+      <div class="mt16 text-center">
+        <button class="btn btn-primary" id="ready-btn" onclick="onReady()">🎧 Готов услышать диспетчера</button>
+      </div>
+    </div>
+
+    <!-- Диспетчер -->
+    <div id="controller-box">
+      <div class="label">📻 Диспетчер передаёт:</div>
+      <div id="controller-text"></div>
+      <div id="data-text"></div>
+    </div>
+
+    <!-- Обратный отсчёт -->
+    <div id="countdown-box"></div>
+
+    <!-- Запись -->
+    <div id="recorder-section">
+      <button id="rec-btn" onclick="toggleRecord()">
+        <span id="rec-icon">⏺</span>
+        <span id="rec-label">Нажмите, чтобы начать запись</span>
+      </button>
+      <div id="rec-timer"></div>
+      <audio id="audio-preview" controls></audio>
+    </div>
+
+    <div class="text-center mt10" id="submit-wrap" style="display:none">
+      <button class="btn btn-primary" onclick="submitAudio()">✓ Оценить ответ</button>
+    </div>
+
+    <!-- Результат -->
+    <div class="card" id="result-card">
+      <div class="score-header">
+        <div class="score-circle" id="score-circle"></div>
+        <div>
+          <div class="score-label" id="score-label"></div>
+          <div class="score-grade" id="score-grade"></div>
+        </div>
+      </div>
+
+      <div class="transcript-box">
+        <div class="t-label">Распознанный ответ</div>
+        <div class="t-text" id="transcribed-text"></div>
+        <div class="t-label mt10">Эталон</div>
+        <div class="t-model" id="model-answer"></div>
+      </div>
+
+      <div class="tip-box" id="tip-box"></div>
+
+      <div class="hints" id="hints-list"></div>
+
+      <div class="card-label">Детальные показатели</div>
+      <table class="metrics-table">
+        <thead><tr><th>Показатель</th><th>Значение</th><th></th></tr></thead>
+        <tbody id="metrics-tbody"></tbody>
+      </table>
+
+      <img id="chart-img" alt="График показателей">
+
+      <div class="mt16 text-center">
+        <button class="btn btn-orange" id="next-btn" onclick="onNext()"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FINAL SCREEN -->
+  <div id="final-screen" class="hidden">
+    <div class="verdict-banner" id="verdict-banner"></div>
+    <div class="card">
+      <div class="card-label">Результаты по сценариям</div>
+      <div id="final-items"></div>
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);text-align:center">
+        <div style="font-size:.85rem;color:var(--muted);margin-bottom:16px" id="final-note"></div>
+        <button class="btn btn-primary" onclick="restart()">🔄 Начать заново</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ────────────── STATE ──────────────
+let sessionId = null, totalScenarios = 0, curScenario = 0;
+let mediaRecorder = null, audioChunks = [], audioBlob = null;
+let recTimerInterval = null, countdownInterval = null, recSeconds = 0;
+let isRecording = false, recordingDone = false;
+let autoStarted = false;
+
+// ────────────── START ──────────────
+async function startQuiz() {
+  const res = await fetch('/api/start', {method:'POST'});
+  const data = await res.json();
+  sessionId = data.session_id;
+  totalScenarios = data.total;
+  curScenario = 1;
+  showScenario(data);
+  document.getElementById('start-screen').classList.add('hidden');
+  document.getElementById('quiz-screen').classList.remove('hidden');
+  document.getElementById('progress-bar-wrap').style.display = 'block';
+  document.getElementById('step-label').style.display = 'block';
+}
+
+function showScenario(data) {
+  curScenario = data.scenario_num;
+  updateProgress();
+  document.getElementById('situation-text').innerHTML =
+    `<strong style="color:var(--teal)">${data.phase}</strong><br><br>${data.situation}`;
+  document.getElementById('situation-card').style.display = 'block';
+  document.getElementById('ready-btn').disabled = false;
+  document.getElementById('controller-box').style.display = 'none';
+  document.getElementById('countdown-box').style.display = 'none';
+  document.getElementById('recorder-section').style.display = 'none';
+  document.getElementById('submit-wrap').style.display = 'none';
+  document.getElementById('result-card').style.display = 'none';
+  document.getElementById('audio-preview').style.display = 'none';
+  audioBlob = null; audioChunks = []; recordingDone = false; autoStarted = false;
+}
+
+function updateProgress() {
+  const pct = ((curScenario - 1) / totalScenarios * 100);
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('step-label').textContent = `Сценарий ${curScenario} из ${totalScenarios}`;
+}
+
+// ────────────── READY ──────────────
+async function onReady() {
+  document.getElementById('ready-btn').disabled = true;
+  const res = await fetch('/api/ready', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({session_id: sessionId})
+  });
+  const data = await res.json();
+  document.getElementById('controller-text').textContent = data.controller;
+  document.getElementById('data-text').textContent = '📋 ' + data.data;
+  document.getElementById('controller-box').style.display = 'block';
+  document.getElementById('situation-card').style.display = 'none';
+
+  // Countdown
+  let delay = data.delay || 3;
+  const cdBox = document.getElementById('countdown-box');
+  cdBox.style.display = 'block';
+  cdBox.textContent = `🎙️ Запись начнётся через ${delay} сек…`;
+  countdownInterval = setInterval(() => {
+    delay--;
+    if (delay <= 0) {
+      clearInterval(countdownInterval);
+      cdBox.textContent = '🔴 Идёт запись — говорите!';
+      startRecording(true);
+    } else {
+      cdBox.textContent = `🎙️ Запись начнётся через ${delay} сек…`;
+    }
+  }, 1000);
+
+  document.getElementById('recorder-section').style.display = 'block';
+}
+
+// ────────────── RECORDING ──────────────
+async function startRecording(auto = false) {
+  autoStarted = auto;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+    audioChunks = [];
+    // Try webm, fall back to whatever is supported
+    let mimeType = 'audio/webm';
+    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = '';
+    mediaRecorder = new MediaRecorder(stream, mimeType ? {mimeType} : {});
+    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+    mediaRecorder.onstop = () => {
+      audioBlob = new Blob(audioChunks, {type: mimeType || 'audio/ogg'});
+      const url = URL.createObjectURL(audioBlob);
+      const preview = document.getElementById('audio-preview');
+      preview.src = url; preview.style.display = 'block';
+      stream.getTracks().forEach(t => t.stop());
+    };
+    mediaRecorder.start();
+    isRecording = true; recSeconds = 0;
+    updateRecBtn();
+    recTimerInterval = setInterval(() => { recSeconds++; updateRecTimer(); }, 1000);
+  } catch(e) {
+    alert('Не удалось получить доступ к микрофону: ' + e.message);
+  }
+}
+
+function stopRecording() {
+  if (mediaRecorder && isRecording) {
+    mediaRecorder.stop();
+    isRecording = false; recordingDone = true;
+    clearInterval(recTimerInterval);
+    updateRecBtn();
+    document.getElementById('countdown-box').textContent = '✅ Запись завершена — нажмите «Оценить ответ»';
+    document.getElementById('submit-wrap').style.display = 'block';
+  }
+}
+
+function toggleRecord() {
+  if (!isRecording && !recordingDone) { startRecording(false); }
+  else if (isRecording) { stopRecording(); }
+}
+
+function updateRecBtn() {
+  const btn = document.getElementById('rec-btn');
+  const icon = document.getElementById('rec-icon');
+  const lbl  = document.getElementById('rec-label');
+  if (isRecording) {
+    btn.className = 'recording'; icon.textContent = '⏹'; lbl.textContent = 'Нажмите, чтобы остановить запись';
+  } else if (recordingDone) {
+    btn.className = 'done'; icon.textContent = '✅'; lbl.textContent = 'Запись завершена';
+    btn.disabled = true;
+  } else {
+    btn.className = ''; icon.textContent = '⏺'; lbl.textContent = 'Нажмите, чтобы начать запись';
+  }
+}
+
+function updateRecTimer() {
+  const m = Math.floor(recSeconds/60), s = recSeconds%60;
+  document.getElementById('rec-timer').textContent = `⏱ ${m}:${s<10?'0'+s:s}`;
+}
+
+// ────────────── SUBMIT ──────────────
+async function submitAudio() {
+  if (!audioBlob) { alert('Сначала запишите ответ'); return; }
+  document.querySelector('[onclick="submitAudio()"]').disabled = true;
+  document.querySelector('[onclick="submitAudio()"]').textContent = '⏳ Обрабатываю…';
+
+  const fd = new FormData();
+  fd.append('session_id', sessionId);
+  fd.append('audio', audioBlob, 'answer.webm');
+
+  const res = await fetch('/api/submit', {method:'POST', body: fd});
+  const data = await res.json();
+  if (data.error) { alert('Ошибка: ' + data.error); return; }
+  showResult(data);
+}
+
+function showResult(d) {
+  document.getElementById('submit-wrap').style.display = 'none';
+  document.getElementById('recorder-section').style.display = 'none';
+  document.getElementById('controller-box').style.display = 'none';
+  document.getElementById('countdown-box').style.display = 'none';
+
+  // Score circle
+  const sc = document.getElementById('score-circle');
+  const score = d.headline;
+  sc.textContent = score;
+  sc.className = 'score-circle ' + (score>=70?'good':score>=55?'warn':'bad');
+  document.getElementById('score-label').textContent = d.grade_icon + ' ' + d.grade + ' — ' + score + ' / 100';
+  document.getElementById('score-grade').textContent =
+    `Слабый показатель: ${d.weak_name} (${d.weak_val})`;
+
+  document.getElementById('transcribed-text').textContent = d.transcribed;
+  document.getElementById('model-answer').textContent = d.model_answer;
+  document.getElementById('tip-box').textContent = '💡 ' + d.tip;
+
+  // Hints
+  const hList = document.getElementById('hints-list');
+  hList.innerHTML = '';
+  const icons = {critical:'⛔', err:'❌', ok:'✅', warn:'⚠️', info:'ℹ️'};
+  d.hints.forEach(h => {
+    const div = document.createElement('div');
+    div.className = 'hint ' + h.type;
+    div.innerHTML = `<span class="hint-icon">${icons[h.type]||'·'}</span><span>${h.text}</span>`;
+    hList.appendChild(div);
+  });
+
+  // Metrics
+  const tbody = document.getElementById('metrics-tbody');
+  tbody.innerHTML = '';
+  d.metrics.forEach(m => {
+    const tr = document.createElement('tr');
+    const badge = `<span class="badge ${m.status}">${m.status==='ok'?'✅':m.status==='err'?'❌':m.status==='warn'?'⚠️':'ℹ️'}</span>`;
+    tr.innerHTML = `<td>${m.label}</td><td>${m.value}</td><td>${badge}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  // Chart
+  const img = document.getElementById('chart-img');
+  img.src = d.chart_url + '?t=' + Date.now();
+  img.style.display = 'block';
+
+  // Next button
+  const nextBtn = document.getElementById('next-btn');
+  nextBtn.textContent = d.is_last ? '🏁 Показать итоги' : '➡️ Следующий сценарий';
+
+  document.getElementById('result-card').style.display = 'block';
+  document.getElementById('result-card').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+// ────────────── NEXT ──────────────
+async function onNext() {
+  const res = await fetch('/api/next', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({session_id: sessionId})
+  });
+  const data = await res.json();
+  if (data.done) {
+    showFinal(data);
+  } else {
+    document.getElementById('result-card').style.display = 'none';
+    showScenario(data);
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+}
+
+// ────────────── FINAL ──────────────
+function showFinal(d) {
+  document.getElementById('quiz-screen').classList.add('hidden');
+  document.getElementById('final-screen').classList.remove('hidden');
+  const banner = document.getElementById('verdict-banner');
+  banner.textContent = d.grade_icon + ' ' + d.verdict + ' — ' + d.final + ' / 100';
+  banner.className = 'verdict-banner ' + (d.verdict==='ЗАЧЁТ' ? 'pass' : 'fail');
+
+  const items = document.getElementById('final-items');
+  items.innerHTML = '';
+  d.items.forEach((it, i) => {
+    const div = document.createElement('div');
+    div.className = 'final-item';
+    const icon = it.has_critical ? '⛔' : it.score>=70 ? '✅' : it.score>=55 ? '⚠️' : '❌';
+    div.innerHTML = `<span>${i+1}. ${it.phase}</span><span>${icon} ${it.score}/100 — ${it.grade}</span>`;
+    items.appendChild(div);
+  });
+
+  const note = document.getElementById('final-note');
+  if (d.any_critical) {
+    note.textContent = '⛔ В одном из сценариев допущено критическое нарушение — автоматический незачёт.';
+  } else {
+    note.textContent = 'Итоговая оценка ограничена самым слабым показателем.';
+  }
+  document.getElementById('progress-bar').style.width = '100%';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// ────────────── RESTART ──────────────
+function restart() {
+  sessionId = null;
+  document.getElementById('final-screen').classList.add('hidden');
+  document.getElementById('quiz-screen').classList.add('hidden');
+  document.getElementById('start-screen').classList.remove('hidden');
+  document.getElementById('progress-bar-wrap').style.display = 'none';
+  document.getElementById('step-label').style.display = 'none';
+}
+</script>
+</body>
+</html>
